@@ -1,0 +1,237 @@
+#include <iostream>
+#include <vector>
+#include <sstream>
+#include <chrono>
+
+
+using namespace std;
+using namespace chrono;
+
+bool ascending = true; // 오름차순
+
+bool Compare(const int first, const int second)
+{
+	return ascending ? (first > second) : (first < second);
+}
+
+void Swap(int& first, int& second)
+{
+	int tmp = first;
+	first = second;
+	second = tmp;
+}
+
+void BubbleSort(vector<int>& v) // 버블 정렬
+{
+	size_t size = v.size();
+
+	for (size_t i = 0; i < size - 1; i++)
+	{
+		for (size_t j = 0; j < size - i - 1; j++)
+		{
+			if (Compare(v[j], v[j + 1]))
+			{
+				Swap(v[j], v[j + 1]);
+			}
+		}
+	}
+}
+
+void SelectionSort(vector<int>& v) // 선택 정렬
+{
+	size_t size = v.size();
+
+	for (size_t i = 0; i < size - 1; i++)
+	{
+		int index = i;
+
+		for (int j = i + 1; j < size; j++)
+		{
+			if (Compare(v[index], v[j]))
+			{
+				index = j;
+			}
+		}
+
+		Swap(v[i], v[index]); // i == index 면 낭비지만 어짜피 데이터셋이 크면 사용하지 않을거기에 pass
+	}
+}
+
+void InsertionSort(vector<int>& v)
+{
+	size_t size = v.size();
+
+	for (size_t i = 1; i < size; i++)
+	{
+		int key = v[i];
+		int j = i - 1;
+
+		while (j >= 0 && Compare(key, v[j])) //여긴 Swap 보단 뒤로 밀어내는 게 효율이 좋음
+		{
+			v[j + 1] = v[j];
+			j--;
+		}
+
+		v[j + 1] = key;
+	}
+}
+
+
+
+void Merge(vector<int>& v, const int left, const int mid, const int right)
+{
+	int leftSize = mid - left + 1;
+	int rightSize = right - mid;
+
+	vector<int> leftVector(leftSize), rightVector(rightSize);
+
+	for (int i = 0; i < leftSize; i++)
+	{
+		leftVector[i] = v[left + i];
+	}
+
+	for (int i = 0; i < rightSize; i++)
+	{
+		rightVector[i] = v[mid + 1 + i];
+	}
+
+	int leftIndex = 0, rightIndex = 0, curIndex = left;
+	
+	while (leftIndex < leftSize && rightIndex < rightSize)
+	{
+		if (Compare(rightVector[rightIndex], leftVector[leftIndex]))
+		{
+			v[curIndex++] = leftVector[leftIndex++];
+		}
+		else
+		{
+			v[curIndex++] = rightVector[rightIndex++];
+		}
+	}
+
+	while (leftIndex < leftSize)
+	{
+		v[curIndex++] = leftVector[leftIndex++];
+	}
+	while (rightIndex < rightSize)
+	{
+		v[curIndex++] = rightVector[rightIndex++];
+	}
+
+}
+
+void MergeSort(vector<int>& v, int left, int right)
+{
+	if (left < right)
+	{
+		int mid = left + (right - left) / 2; // 오버플로우 방지
+
+		MergeSort(v, left, mid);
+		MergeSort(v, mid + 1, right);
+
+		Merge(v, left, mid, right);
+	}
+}
+
+int Quick(vector<int>& v, int left, int right)
+{
+	// 맨 끝이 피벗, i 왼쪽에 배치할 자리
+	int pivot = v[right];
+	int leftIndex = left - 1;
+	
+	for (int rightIndex = left; rightIndex < right; rightIndex++) //왼쪽부터 순회하며 피벗과 비교
+	{
+		if (!Compare(v[rightIndex], pivot))
+		{
+			Swap(v[++leftIndex], v[rightIndex]); //기준 왼쪽에 기준 미달 넣기
+		}
+	}
+
+	Swap(v[leftIndex + 1], v[right]); // 피벗 오른쪽엔 조건 성립한 애들이 있어야함
+
+	return leftIndex + 1; //피벗 위치 반환
+}
+
+void QuickSort(vector<int>& v, int left, int right)
+{
+	if (left < right)
+	{
+		int pivotIndex = Quick(v, left, right);
+
+		QuickSort(v, left, pivotIndex - 1);
+		QuickSort(v, pivotIndex + 1, right);
+	}
+}
+
+int main()
+{ 
+	vector<int> v;
+	int input;
+	string line;
+
+	cout << "정렬할 정수들을 공백으로 구분하여 입력 (엔터로 종료)\n: ";
+	
+	getline(cin, line);
+	
+	stringstream ss(line);
+
+	while (ss >> input)
+	{
+		v.push_back(input);
+	}
+
+	cout << "\n정렬 방식을 선택:\n1. 오름차순\n2. 내림차순\n\n입력: ";
+	cin >> input;
+	
+	ascending = (input == 1);
+
+	cout << "\n정렬 방법을 선택:\n1. 버블 정렬\n2. 선택 정렬\n3. 삽입 정렬\n4. 병합 정렬\n5. 퀵 정렬\n\n";
+	
+	while (true)
+	{
+		cout << "입력: ";
+		cin >> input;
+		if (input >= 1 && input <= 5)
+			break;
+		else
+			cout << "잘못된 입력\n";
+	}
+
+	auto startTime = high_resolution_clock::now();
+
+	switch (input)
+	{
+	case 1:
+		BubbleSort(v);
+		break;
+	case 2:
+		SelectionSort(v);
+		break;
+	case 3:
+		InsertionSort(v);
+		break;
+	case 4:
+		MergeSort(v, 0, v.size()-1);
+		break;
+	case 5:
+		QuickSort(v, 0, v.size()-1);
+	default:
+		break;
+	}
+
+	auto endTime = high_resolution_clock::now();
+
+	auto duration = duration_cast<microseconds>(endTime - startTime);
+
+	cout << "\n정렬 소요 시간: " << duration.count() << " 마이크로 세컨드" << endl;
+	cout << "\n정렬된 결과: ";
+
+	for (size_t i = 0; i < v.size(); ++i)
+	{
+		cout << v[i];
+		if (i != v.size() - 1) cout << " ";
+	}
+	cout << endl;
+
+	return 0;
+}
